@@ -1,3 +1,6 @@
 # util.py
 
-FILE_NAME = '/Users/cosmint/Documents/Python/expense_tracker/logic/data.csv'
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+FILE_NAME = os.path.join(SCRIPT_DIR, 'data.csv')
