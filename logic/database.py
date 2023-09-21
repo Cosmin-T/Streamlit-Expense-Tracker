@@ -41,7 +41,7 @@ def find_period_in_data(period, data):
 
 def insert_period(period, incomes, expenses, comment):
 
-    #Insert or update a record in the CSV based on the provided period.
+    # Load all data
     data = load_all_data()
 
     # Check if an entry with the provided period already exists.
@@ -51,15 +51,23 @@ def insert_period(period, incomes, expenses, comment):
     existing_incomes = eval(existing_entry['Incomes']) if existing_entry else {}
     existing_expenses = eval(existing_entry['Expenses']) if existing_entry else {}
 
-    # If it exists, update the entry.
-    if existing_entry:
-        # Update incomes and expenses by summing the old and new values
-        for key, value in incomes.items():
-            existing_incomes[key] = existing_incomes.get(key, 0) + value
-        for key, value in expenses.items():
-            existing_expenses[key] = existing_expenses.get(key, 0) + value
+    # Handle incomes
+    for key, value in incomes.items():
+        if key in existing_incomes:  # If key exists, we consider it an update
+            # Your update logic here. For now, I'm just overwriting the value:
+            existing_incomes[key] = value
+        else:  # Else, it's a new category
+            existing_incomes[key] = value
 
-        # Update the entry
+    # Handle expenses
+    for key, value in expenses.items():
+        if key in existing_expenses:
+            existing_expenses[key] = value
+        else:
+            existing_expenses[key] = value
+
+    # If the period exists, update the entry.
+    if existing_entry:
         existing_entry['Incomes'] = str(existing_incomes)
         existing_entry['Expenses'] = str(existing_expenses)
         existing_entry['Comment'] = comment
