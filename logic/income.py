@@ -8,12 +8,6 @@ def inc():
     incomes = [
         "Salary",
         "Bonuses",
-        "Interest and Dividends",
-        "Business Income",
-        "Rental Income",
-        "Investment Income",
-        "Freelance Income",
-        "Government Benefits",
         "Other"
     ]
 

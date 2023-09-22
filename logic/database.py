@@ -62,7 +62,8 @@ def insert_period(period, incomes, expenses, comment):
 
             # Add the new expenses to the existing expenses
             for key, value in expenses.items():
-                existing_expenses[key] += value
+                existing_expenses[key] = existing_expenses.get(key, 0) + value
+
 
             # Update the comment for the existing entry
             existing_entry['Comment'] = comment

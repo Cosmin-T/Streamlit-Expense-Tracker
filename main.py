@@ -31,11 +31,14 @@ def main():
             # Income
             incomes_list = inc()
 
+            # Comment Section for Incomes
+            income_comment = com("Income")
+
             # Expenses
             expenses_list = exp()
 
-            # Comment Section
-            comment = com()
+            # Comment Section for Expenses
+            expense_comment = com("Expense")
 
             # Submission logic
             submitted = st.form_submit_button("Save Data")
@@ -44,10 +47,16 @@ def main():
                 # Retrieve values from session_state
                 incomes = {income: st.session_state.get(f"income_{income}", 0) for income in incomes_list}
                 expenses = {expense: st.session_state.get(f"expense_{expense}", 0) for expense in expenses_list}
-                insert_period(period, incomes, expenses, comment)
+
+                # Insert data for Incomes with the income_comment
+                insert_period(period, incomes, {}, income_comment)
+
+                # Insert data for Expenses with the expense_comment
+                insert_period(period, {}, expenses, expense_comment)
 
                 # Display the saved data
                 st.success("Data Saved")
+
 
     # Handle Data Visualization section logic.
     elif selected_choice == "Data-Visualization":
