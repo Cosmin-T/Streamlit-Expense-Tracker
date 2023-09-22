@@ -10,7 +10,8 @@ def exp():
         "Transportation",
         "Food and Health",
         "Education and Entertainment",
-        "Financial and Insurance"
+        "Financial and Insurance",
+        "Other"
     ]
 
     # Display an expandable section for users to input values for each expense type.
