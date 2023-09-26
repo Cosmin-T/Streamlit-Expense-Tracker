@@ -35,7 +35,7 @@ def main():
             expenses_list = exp()
 
             # Comment Section for Expenses
-            expense_comment = com("Details")
+            expense_comment = com("Expense")
 
             # Submission logic
             submitted = st.form_submit_button("Save Data")
@@ -45,15 +45,14 @@ def main():
                 incomes = {income: st.session_state.get(f"income_{income}", 0) for income in incomes_list}
                 expenses = {expense: st.session_state.get(f"expense_{expense}", 0) for expense in expenses_list}
 
-                # Insert data for Incomes with the income_comment
-                insert_period(period, {}, incomes)
+                # Insert data for Incomes
+                insert_period(period, incomes, {})
 
                 # Insert data for Expenses with the expense_comment
                 insert_period(period, {}, expenses, expense_comment)
 
                 # Display the saved data
                 st.success("Data Saved")
-
 
     # Handle Data Visualization section logic.
     elif selected_choice == "Data-Visualization":
