@@ -46,7 +46,7 @@ def main():
                 expenses = {expense: st.session_state.get(f"expense_{expense}", 0) for expense in expenses_list}
 
                 # Insert data for Incomes with the income_comment
-                insert_period(period, incomes, {}, income_comment)
+                insert_period(period, incomes, {})
 
                 # Insert data for Expenses with the expense_comment
                 insert_period(period, {}, expenses, expense_comment)
