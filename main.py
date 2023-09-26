@@ -31,14 +31,11 @@ def main():
             # Income
             incomes_list = inc()
 
-            # Comment Section for Incomes
-            income_comment = com("Income")
-
             # Expenses
             expenses_list = exp()
 
             # Comment Section for Expenses
-            expense_comment = com("Expense")
+            expense_comment = com("Details")
 
             # Submission logic
             submitted = st.form_submit_button("Save Data")
