@@ -1,65 +1,53 @@
 # main.py
 
 import streamlit as st
-import plotly.graph_objects as go
-from streamlit_option_menu import option_menu
-from logic.settings import settings
-from logic.navigation import nav
-from logic.currency import curr
-from logic.period import per
-from logic.comments import com
-from logic.income import inc
-from logic.expense import exp
-from logic.data_plug import *
-from logic.database import *
+from logic.settings import *
+from logic.app import *
+from logic.authenticator import *
 
 def main():
-
     # Configure the page with title and icon
     settings()
-    # Use nav to determine user's choice
-    selected_choice = nav()
-    # show_details(total_income, currency, total_expense, remaining_budget)
 
-    # Handle Data Entry section logic.
-    if selected_choice == "Data Entry":
-        with st.form(key="main_form"):
-            # Period (Month & Year) Entry
-            month, year = per()
-            period = f"{month} {year}"
+    # Check if the mode is set in the session state, if not, set it to login
+    if 'mode' not in st.session_state:
+        st.session_state['mode'] = 'login'
 
-            # Income
-            incomes_list = inc()
-
-            # Expenses
-            expenses_list = exp()
-
-            # Comment Section for Expenses
-            expense_comment = com("Expense")
-
-            # Submission logic
-            submitted = st.form_submit_button("Save Data")
-
+    # If the mode is set to login, display the login form
+    if st.session_state['mode'] == 'login':
+        with st.form('login_form'):
+            st.subheader(':green[Login]')
+            username = st.text_input(':blue[Username]')
+            password = st.text_input(':blue[Password]', type='password')
+            b1, b2, b3, b4, b5 = st.columns(5)
+            with b2:
+                submitted = st.form_submit_button('Login')
             if submitted:
-                # Retrieve values from session_state
-                incomes = {income: st.session_state.get(f"income_{income}", 0) for income in incomes_list}
-                expenses = {expense: st.session_state.get(f"expense_{expense}", 0) for expense in expenses_list}
+                if validate_username(username):
+                    if username in get_usernames():
+                        if check_login(username, password):
+                            st.session_state['mode'] = 'app'  # Login successful
+                            st.experimental_rerun()
+                        else:
+                            st.error('Incorrect password. Please try again.')  # Wrong password
+                    else:
+                        st.error('Username does not exist.')  # Username does not exist
+                else:
+                    st.error('Invalid username format.')  # Username format is wrong
 
-                # Insert data for Incomes
-                insert_period(period, incomes, {}, "")
+            with b4:
+                registering = st.form_submit_button('Register')
+                if registering:
+                    st.session_state['mode'] = 'register'  # Switch to register form
+                    st.experimental_rerun()
 
-                # Insert data for Expenses with the expense_comment
-                insert_period(period, {}, expenses, expense_comment)
+    # Display the registration form
+    if st.session_state['mode'] == 'register':
+        register()
 
-                # Display the saved data
-                st.success("Data Saved")
+    # If the mode is set to app, run the main application
+    if st.session_state['mode'] == 'app':
+        og_app()
 
-    # Handle Data Visualization section logic.
-    elif selected_choice == "Data-Visualization":
-        if st.button("Clear All Data"):
-            clear_data()
-        plug()
-
-# Start
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
