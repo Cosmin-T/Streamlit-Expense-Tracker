@@ -45,8 +45,16 @@ def plug():
                 # Display the calculated metrics in the Streamlit app.
                 show_details(total_income, currency, total_expense, remaining_budget)
 
-                # Display the comment associated with the data.
-                st.text(f"Comment: {comment}")
+                # Add a text area for editing the comment, allowing Shift+Enter for new lines.
+                edited_comment = st.text_area("Edit Comment:", comment)
+
+                # Check if the comment has been edited and save it.
+                if edited_comment != comment:
+                    # Update the comment in the database with the edited comment.
+                    update_comment(period, edited_comment)
+
+                # Display the edited or original comment.
+                st.text(f"Comment: {edited_comment}")
 
                 # Create a sankey chart to visually represent the flow of incomes and expenses.
                 # Setup the source, target, and values for the sankey diagram.

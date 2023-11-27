@@ -8,8 +8,8 @@ def nav():
     # Create a menu for users to select either Data Entry or Data Visualization.
     selected = option_menu(
         menu_title=None,
-        options=["Data Entry", "Data-Visualization"],
-        icons=["pencil-fill", "bar-chart-fill"],
+        options=["Data Entry", "Data-Visualization", "Tracker"],
+        icons=["pencil-fill", "bar-chart-fill", "box-seam-fill"],
         orientation="horizontal"
     )
     return selected

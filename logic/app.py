@@ -11,6 +11,7 @@ from logic.income import inc
 from logic.expense import exp
 from logic.data_plug import *
 from logic.database import *
+from logic.tracker import *
 import datetime
 
 def og_app():
@@ -68,3 +69,7 @@ def og_app():
         if st.button("Clear All Data"):
             clear_data()
         plug()
+
+    # Handle Tracker section logic.
+    elif selected_choice == "Tracker":
+        f_instalments()

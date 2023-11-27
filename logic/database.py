@@ -139,3 +139,18 @@ def clear_data():
     # Function to clear all financial data from the database
     # Save an empty list to clear all entries in the database
     save_all_data([])
+
+def update_comment(period, edited_comment):
+    # Function to update the comment for a specific period
+    # Load all existing financial data from the database
+    data = load_all_data()
+
+    # Find the existing entry for the given period
+    existing_entry = find_period_in_data(period, data)
+
+    if existing_entry:
+        # Update the comment for the existing entry
+        existing_entry['Comment'] = edited_comment
+
+    # Save the updated data back to the database
+    save_all_data(data)
