@@ -55,7 +55,7 @@ def f_instalments():
         # Create a row for the header
         header_columns = st.columns(len(dataframe.columns))
         st.write("---")
-        header_columns[0].write("2023")
+        header_columns[0].write("Current Year")
         for col_index, col_name in enumerate(dataframe.columns[1:], start=1):
             header_columns[col_index].write(col_name)  # Write column names
 
