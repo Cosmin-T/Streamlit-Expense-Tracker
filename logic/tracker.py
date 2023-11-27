@@ -134,38 +134,44 @@ def f_instalments():
                 st.write("**RON**")
                 st.number_input("", value=my_cut, step=0.1, key=f"My Cut_{month}")
 
-        # Save the updated data to the JSON file
-        print("Data before saving:", data)
-        save_data(data)
+            # Add input values to total for ING and CEC
+            total_ing += ing_value
+            total_cec += cec_value
 
         # Create a button to download the DataFrame as CSV
         if st.button("Download"):
             st.markdown(get_table_download_link(dataframe), unsafe_allow_html=True)
 
+        # Calculate the remaining values after all months have been processed
+        remaining_ing = current_ing - total_ing
+        remaining_cec = current_cec - total_cec
 
-        # Generate 3 columns for Installments
+        # Generate 3 columns for Installments, including the updated remaining values
         col1, col2, col3 = st.columns(3)
 
-        # Generate total current data for CEC and ING
+        # Generate Current Instance
         with col1:
             st.markdown("## Current")
-            st.number_input("ING", min_value=0.0, step = 0.1, value=current_ing, key="ING - Current")
-            st.number_input("CEC", min_value=0.0, step = 0.1, value=current_cec, key="CEC - Current")
+            st.number_input("ING Current", min_value=0.0, step=0.1, value=current_ing, key="ING - Current")
+            st.number_input("CEC Current", min_value=0.0, step=0.1, value=current_cec, key="CEC - Current")
             st.markdown("---")
 
-        # Generate total added value for CEC and ING
+        # Generate Added Instance
         with col2:
             st.markdown("## Added")
-            st.number_input("ING", min_value=0.0, step = 0.1, value=total_ing, key="ING - Total Added")
-            st.number_input("CEC", min_value=0.0, step = 0.1, value=total_cec, key="CEC - Total Added")
+            st.number_input("ING Added", min_value=0.0, step=0.1, value=total_ing, key="ING - Total Added")
+            st.number_input("CEC Added", min_value=0.0, step=0.1, value=total_cec, key="CEC - Total Added")
             st.markdown("---")
 
-        # Generate total Remaining value for CEC and ING
+        # Generate Remaining Instance
         with col3:
             st.markdown("## Remaining")
-            st.number_input("ING", min_value=0.0, step = 0.1, value=current_ing - total_ing, key="ING - Total Remaining")
-            st.number_input("CEC", min_value=0.0, step = 0.1, value=current_cec - total_cec, key="CEC - Total Remaining")
+            st.number_input("ING Remaining", min_value=0.0, step=0.1, value=remaining_ing, key="ING - Total Remaining")
+            st.number_input("CEC Remaining", min_value=0.0, step=0.1, value=remaining_cec, key="CEC - Total Remaining")
             st.markdown("---")
+
+        # Save the updated data to the JSON file
+        save_data(data)
 
         # Return the DataFrame
         return dataframe
