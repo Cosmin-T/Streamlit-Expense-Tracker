@@ -75,14 +75,18 @@ def f_instalments():
         for col_index, col_name in enumerate(dataframe.columns[1:], start=1):
             header_columns[col_index].write(col_name)
 
-         # Create rows for each month
+        # Create rows for each month
         for i, row in dataframe.iterrows():
             # Create columns for each row
             cols = st.columns(len(dataframe.columns))
 
             # Display the month in the first column
-            cols[0].write(f"{row['Months']}")
+            month = row['Months']
+            cols[0].write(f"{month}")
             st.divider()
+
+            # Initialize the values for ING, CEC, Orange, and Salary for the current month
+            ing_value = cec_value = orange_value = salary_value = 0.0
 
             # Add checkboxes and input fields for the other columns
             for j, col in enumerate(dataframe.columns[1:-1]):
@@ -91,12 +95,18 @@ def f_instalments():
                 # Inside each column widget
                 with col_widget:
                     # Generate unique keys for each input element
-                    checkbox_key = f"{col}_{row['Months']}_checkbox"
-                    input_key = f"{col}_{row['Months']}_input"
+                    checkbox_key = f"{col}_{month}_checkbox"
+                    input_key = f"{col}_{month}_input"
 
                     # Use data from the loaded JSON data or set default values
                     checkbox_value = st.checkbox("", key=checkbox_key, value=data.get(checkbox_key, False))
-                    input_value = st.number_input("RON", key=input_key, value=float(data.get(input_key, 0.0)), step=0.1)
+                    if col == "Salary":
+                        # For Salary, set the default value from the JSON data if available
+                        salary_value = float(data.get(input_key, 0.0))
+                        input_value = st.number_input("RON", key=input_key, value=salary_value, step=0.1)
+                    else:
+                        # For other columns, use 0.0 as the default value
+                        input_value = st.number_input("RON", key=input_key, value=float(data.get(input_key, 0.0)), step=0.1)
 
                     # Update the data dictionary with checkbox and input values
                     data[checkbox_key] = checkbox_value
@@ -105,14 +115,16 @@ def f_instalments():
                     # Update the DataFrame with the input values
                     dataframe.at[i, col] = input_value
 
-                     # Add input values to total for ING and CEC
+                    # Update the variable values for ING, CEC, and Orange
                     if col == "ING":
-                        total_ing += input_value
+                        ing_value = input_value
                     elif col == "CEC":
-                        total_cec += input_value
+                        cec_value = input_value
+                    elif col == "Orange":
+                        orange_value = input_value
 
-            # Calculate "My Cut" dynamically for each row
-            my_cut = row['Salary'] - (row['ING'] + row['CEC'] + row['Orange'])
+            # Calculate "My Cut" for each row using the updated values
+            my_cut = salary_value - (ing_value + cec_value + orange_value)
 
             # Update the "My Cut" column in the DataFrame
             dataframe.at[i, "My Cut"] = my_cut
@@ -120,7 +132,7 @@ def f_instalments():
             # Display the "My Cut" value in the widget
             with cols[-1]:
                 st.write("**RON**")
-                st.number_input("", value=my_cut, step=0.1, key=f"My Cut_{row['Months']}")
+                st.number_input("", value=my_cut, step=0.1, key=f"My Cut_{month}")
 
         # Save the updated data to the JSON file
         print("Data before saving:", data)
