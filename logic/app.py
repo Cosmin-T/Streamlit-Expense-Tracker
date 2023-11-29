@@ -25,7 +25,7 @@ def og_app():
     selected_choice = nav()
 
     # Handle Data Entry section logic.
-    if selected_choice == "Data Entry":
+    if selected_choice == "Data-Entry":
         with st.form(key="main_form"):
             # Period (Month & Year) Entry
             month, year = per()
@@ -71,5 +71,5 @@ def og_app():
         plug()
 
     # Handle Tracker section logic.
-    elif selected_choice == "Tracker":
+    elif selected_choice == "Data-Tracker":
         f_instalments()

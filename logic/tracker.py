@@ -1,6 +1,7 @@
 from logic.navigation import *
 from logic.database import *
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import os
 from logic.util import *
@@ -29,7 +30,7 @@ def save_data(data):
 
 def table():
     # Create a dataframe that has "ING, CEC, Orange" as columns
-    df = pd.DataFrame(columns=["ING", "CEC", "Orange", "Salary", "My Cut"])
+    df = pd.DataFrame(columns=["ING", "CEC", "Orange", "Salary", " "])
     # Return the dataframe
     return df
 
@@ -60,6 +61,9 @@ def f_instalments():
         # Concatenate the months DataFrame with the existing one
         dataframe = pd.concat([months_df, dataframe], axis=1)
 
+        # Add an empty column for separation
+        dataframe[''] = ''
+
         # Total Variables
         total_ing = 0.0
         total_cec = 0.0
@@ -68,8 +72,13 @@ def f_instalments():
         header_columns = st.columns(len(dataframe.columns))
         st.write("---")
         header_columns[0].write("Current Year")
-        for col_index, col_name in enumerate(dataframe.columns[1:], start=1):
-            header_columns[col_index].write(col_name)
+        for i_col, name_col in enumerate(dataframe.columns[1:-1], start=1):  # Exclude last column
+            header_columns[i_col].write(name_col)
+
+        # Place My Cut as the last column header
+        header_columns[-1].write("My Cut")
+
+        header_columns[-2].write("")
 
         # Create rows for each month
         for i, row in dataframe.iterrows():
@@ -85,7 +94,7 @@ def f_instalments():
             ing_value = cec_value = orange_value = salary_value = 0.0
 
             # Add checkboxes and input fields for the other columns
-            for j, col in enumerate(dataframe.columns[1:-1]):
+            for j, col in enumerate(dataframe.columns[1:-2]):
                 col_widget = cols[j + 1]
 
                 # Inside each column widget
@@ -138,6 +147,13 @@ def f_instalments():
         if st.button("Download"):
             st.markdown(get_table_download_link(dataframe), unsafe_allow_html=True)
 
+        # Generate the 100% values for ING and CEC
+        all_ing = 13529.00
+        all_cec = 38660.00
+
+        # Generate the current values for ING and CEC
+        current_ing = 6429.67 + total_ing
+        current_cec = 18046.11 + total_cec
 
         # Generate 3 columns for Installments, including the updated remaining values
         col1, col2, col3 = st.columns(3)
@@ -145,13 +161,13 @@ def f_instalments():
         # Generate Current Instance
         with col1:
             st.markdown("## Current")
-            current_ing = st.number_input("ING Current", min_value=0.0, step=0.1, value=6429.67, key="ING - Current")
-            current_cec = st.number_input("CEC Current", min_value=0.0, step=0.1, value=20125.11, key="CEC - Current")
+            st.number_input("ING Current", min_value=0.0, step=0.1, value=current_ing, key="ING - Current")
+            st.number_input("CEC Current", min_value=0.0, step=0.1, value=current_cec, key="CEC - Current")
             st.markdown("---")
 
         # Calculate the remaining values after all months have been processed
-        remaining_ing = current_ing - total_ing
-        remaining_cec = current_cec - total_cec
+        remaining_ing = all_ing - current_ing
+        remaining_cec = all_cec - current_cec
 
         # Generate Added Instance
         with col2:
@@ -166,6 +182,13 @@ def f_instalments():
             st.number_input("ING Remaining", min_value=0.0, step=0.1, value=remaining_ing, key="ING - Total Remaining")
             st.number_input("CEC Remaining", min_value=0.0, step=0.1, value=remaining_cec, key="CEC - Total Remaining")
             st.markdown("---")
+
+        # Generate Max Funds
+        st.markdown("## Max Funds")
+
+        st.number_input("ING Load", min_value=0.0, step=0.1, value=all_ing, key="ING - Total")
+        st.number_input("CEC Load", min_value=0.0, step=0.1, value=all_cec, key="CEC - Total")
+        st.markdown("---")
 
         # Save the updated data to the JSON file
         save_data(data)
