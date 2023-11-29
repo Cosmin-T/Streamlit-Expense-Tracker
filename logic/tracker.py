@@ -60,10 +60,6 @@ def f_instalments():
         # Concatenate the months DataFrame with the existing one
         dataframe = pd.concat([months_df, dataframe], axis=1)
 
-        # Current Variables
-        current_ing = 6429.67
-        current_cec = 19125.11
-
         # Total Variables
         total_ing = 0.0
         total_cec = 0.0
@@ -142,9 +138,6 @@ def f_instalments():
         if st.button("Download"):
             st.markdown(get_table_download_link(dataframe), unsafe_allow_html=True)
 
-        # Calculate the remaining values after all months have been processed
-        remaining_ing = current_ing - total_ing
-        remaining_cec = current_cec - total_cec
 
         # Generate 3 columns for Installments, including the updated remaining values
         col1, col2, col3 = st.columns(3)
@@ -152,9 +145,13 @@ def f_instalments():
         # Generate Current Instance
         with col1:
             st.markdown("## Current")
-            st.number_input("ING Current", min_value=0.0, step=0.1, value=current_ing, key="ING - Current")
-            st.number_input("CEC Current", min_value=0.0, step=0.1, value=current_cec, key="CEC - Current")
+            current_ing = st.number_input("ING Current", min_value=0.0, step=0.1, value=6429.67, key="ING - Current")
+            current_cec = st.number_input("CEC Current", min_value=0.0, step=0.1, value=20125.11, key="CEC - Current")
             st.markdown("---")
+
+        # Calculate the remaining values after all months have been processed
+        remaining_ing = current_ing - total_ing
+        remaining_cec = current_cec - total_cec
 
         # Generate Added Instance
         with col2:
