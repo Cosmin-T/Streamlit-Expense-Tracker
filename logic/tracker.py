@@ -1,7 +1,6 @@
 from logic.navigation import *
 from logic.database import *
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
 import os
 from logic.util import *
@@ -30,7 +29,7 @@ def save_data(data):
 
 def table():
     # Create a dataframe that has "ING, CEC, Orange" as columns
-    df = pd.DataFrame(columns=["ING", "CEC", "Orange", "Salary", " "])
+    df = pd.DataFrame(columns=["ING", "CEC", "Orange", "Salary", "My Cut"])
     # Return the dataframe
     return df
 
@@ -61,9 +60,6 @@ def f_instalments():
         # Concatenate the months DataFrame with the existing one
         dataframe = pd.concat([months_df, dataframe], axis=1)
 
-        # Add an empty column for separation
-        dataframe[''] = ''
-
         # Total Variables
         total_ing = 0.0
         total_cec = 0.0
@@ -72,13 +68,8 @@ def f_instalments():
         header_columns = st.columns(len(dataframe.columns))
         st.write("---")
         header_columns[0].write("Current Year")
-        for i_col, name_col in enumerate(dataframe.columns[1:-1], start=1):  # Exclude last column
-            header_columns[i_col].write(name_col)
-
-        # Place My Cut as the last column header
-        header_columns[-1].write("My Cut")
-
-        header_columns[-2].write("")
+        for col_index, col_name in enumerate(dataframe.columns[1:], start=1):
+            header_columns[col_index].write(col_name)
 
         # Create rows for each month
         for i, row in dataframe.iterrows():
@@ -94,7 +85,7 @@ def f_instalments():
             ing_value = cec_value = orange_value = salary_value = 0.0
 
             # Add checkboxes and input fields for the other columns
-            for j, col in enumerate(dataframe.columns[1:-2]):
+            for j, col in enumerate(dataframe.columns[1:-1]):
                 col_widget = cols[j + 1]
 
                 # Inside each column widget
@@ -158,6 +149,7 @@ def f_instalments():
         # Generate 3 columns for Installments, including the updated remaining values
         col1, col2, col3 = st.columns(3)
 
+
         # Generate Current Instance
         with col1:
             st.markdown("## Current")
@@ -183,11 +175,11 @@ def f_instalments():
             st.number_input("CEC Remaining", min_value=0.0, step=0.1, value=remaining_cec, key="CEC - Total Remaining")
             st.markdown("---")
 
-        # Generate Max Funds
+        # Generate Total Load
         st.markdown("## Max Funds")
 
-        st.number_input("ING Load", min_value=0.0, step=0.1, value=all_ing, key="ING - Total")
-        st.number_input("CEC Load", min_value=0.0, step=0.1, value=all_cec, key="CEC - Total")
+        st.number_input("ING Funds", min_value=0.0, step=0.1, value=all_ing, key="ING - Total")
+        st.number_input("CEC Funds", min_value=0.0, step=0.1, value=all_cec, key="CEC - Total")
         st.markdown("---")
 
         # Save the updated data to the JSON file
