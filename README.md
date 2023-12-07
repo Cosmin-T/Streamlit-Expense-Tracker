@@ -1,4 +1,4 @@
-# Streamlit-Expense-Tracker
+# Streamlit Expense Tracker
 
 A comprehensive web application built with Streamlit for tracking personal expenses, incomes, and visualizing financial data.
 
