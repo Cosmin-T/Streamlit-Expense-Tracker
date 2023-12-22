@@ -26,6 +26,7 @@ def main():
                 if validate_username(username):
                     if username in get_usernames():
                         if check_login(username, password):
+                            st.session_state['username'] = username  # Save username in session state
                             st.session_state['mode'] = 'app'  # Login successful
                             st.experimental_rerun()
                         else:

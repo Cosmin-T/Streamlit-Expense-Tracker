@@ -12,6 +12,7 @@ from logic.expense import exp
 from logic.data_plug import *
 from logic.database import *
 from logic.tracker import *
+from logic.authenticator import *
 import datetime
 
 def og_app():
@@ -72,4 +73,9 @@ def og_app():
 
     # Handle Tracker section logic.
     elif selected_choice == "Data-Tracker":
-        f_instalments()
+        username = st.session_state.get('username', None)
+        if username == "cosmint":
+            f_instalments()
+
+        else:
+            st.warning("You are not authorized to access this page.")

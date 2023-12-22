@@ -110,13 +110,13 @@ def register():
             decoded_hashed_password = hashed_password.decode('utf-8')
 
             # Debug print here (Make sure to remove after debugging)
-            print(f"Debug: Hashed password during registration: {hashed_password}")  # For debugging only!
+            print(f"Debug: Hashed password during registration: {hashed_password}")
 
             # Pass the decoded hashed password to the insert_user function
             user_record = insert_user(email, username, decoded_hashed_password)
 
             # Debug print here (Make sure to remove after debugging)
-            print(f"Debug: Stored user record: {user_record}")  # For debugging only!
+            print(f"Debug: Stored user record: {user_record}")
             st.success('Account Created Successfully')
             st.balloons()
             time.sleep(2)
@@ -139,8 +139,8 @@ def check_login(username, entered_password):
     if user:
         stored_hashed_password = user['password'].encode('utf-8')
         login_attempt = bcrypt.checkpw(entered_password.encode('utf-8'), stored_hashed_password)
-        print(f"Debug: Stored hashed password: {stored_hashed_password}")  # For debugging only!
-        print(f"Debug: Login attempt result: {login_attempt}")  # For debugging only!
+        print(f"Debug: Stored hashed password: {stored_hashed_password}")
+        print(f"Debug: Login attempt result: {login_attempt}")
         return login_attempt
     return False
 
@@ -178,6 +178,7 @@ def login():
             if not auth_stauts:
                 register()
                 st.error('Incorrect Password or Username!')
+        return username
 
     except:
         st.success('Refersh Page')
