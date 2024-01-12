@@ -123,13 +123,13 @@ def register():
 
             # Redirect user to the login page
             st.session_state['mode'] = 'login'
-            st.experimental_rerun()
+            st.rerun()
 
         with b2:
             login = st.form_submit_button('Login')
         if login:
             st.session_state['mode'] = 'login'
-            st.experimental_rerun()
+            st.rerun()
 
 def check_login(username, entered_password):
     db = database()

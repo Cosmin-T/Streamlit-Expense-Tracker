@@ -28,7 +28,7 @@ def main():
                         if check_login(username, password):
                             st.session_state['username'] = username  # Save username in session state
                             st.session_state['mode'] = 'app'  # Login successful
-                            st.experimental_rerun()
+                            st.rerun()
                         else:
                             st.error('Incorrect password. Please try again.')  # Wrong password
                     else:
@@ -40,7 +40,7 @@ def main():
                 registering = st.form_submit_button('Register')
                 if registering:
                     st.session_state['mode'] = 'register'  # Switch to register form
-                    st.experimental_rerun()
+                    st.rerun()
 
     # Display the registration form
     if st.session_state['mode'] == 'register':

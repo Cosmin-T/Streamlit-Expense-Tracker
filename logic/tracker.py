@@ -143,8 +143,8 @@ def f_instalments():
         all_cec = 38660.00
 
         # Generate the current values for ING and CEC
-        current_ing = 6429.67 + total_ing
-        current_cec = 18046.11 + total_cec
+        current_ing = 6042.86 + total_ing
+        current_cec = 3448.43 + total_cec
 
         # Generate 3 columns for Installments, including the updated remaining values
         col1, col2, col3 = st.columns(3)
