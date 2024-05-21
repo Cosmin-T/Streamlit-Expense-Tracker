@@ -9,8 +9,6 @@ from logic.util import *
 import bcrypt
 import time
 
-# DETA_KEY = 'a0jtvvxnh2x_7Dxsy9FxkYMvoZjtxeCAvQFjJgh1adZ2'
-
 def database():
     deta = Deta(DETA_KEY)
     db = deta.Base('ExpenseTrackerAuth')
