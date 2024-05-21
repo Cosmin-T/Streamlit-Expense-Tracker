@@ -3,6 +3,7 @@ import pandas as pd
 import base64
 from deta import Deta
 from logic.util import *
+import datetime
 
 def table():
     """
@@ -131,7 +132,8 @@ def f_instalments():
         # Create columns for the table headers
         header_columns = st.columns(len(dataframe.columns))
         st.write("---")
-        header_columns[0].write("Current Year")
+        current_year = datetime.datetime.now().year
+        header_columns[0].write(f'##### {current_year}')
         for col_index, col_name in enumerate(dataframe.columns[1:], start=1):
             header_columns[col_index].write(col_name)
 
