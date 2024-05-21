@@ -202,8 +202,8 @@ def f_instalments():
         all_cec = 38660.00
 
         # Calculate the current funds for each expense category
-        current_ing = 6042.86 + total_ing
-        current_cec = 3448.43 + total_cec
+        current_ing = 891.37 + total_ing
+        current_cec = 4356.34 + total_cec
 
         # Create columns for the current funds display
         col1, col2, col3 = st.columns(3)
