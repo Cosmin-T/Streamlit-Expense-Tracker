@@ -1,135 +1,188 @@
 import streamlit as st
 import pandas as pd
 import base64
-from deta import Deta
+import pymysql
 from logic.util import *
 import datetime
 
-def table():
+def table() -> pd.DataFrame:
     """
-    Returns an empty DataFrame with the following columns:
-    "ING", "CEC", "Orange", "Salary", "My Cut"
+    Generates an empty table with the 12 months of the year as the index and
+    columns for ING, CEC, Orange, Salary and MyCut with all values set to 0.
+
+    Returns
+    -------
+    pd.DataFrame
+        An empty table with the specified columns and months as index.
     """
-    # Create a new DataFrame with the specified columns
-    df = pd.DataFrame(columns=["ING", "CEC", "Orange", "Salary", "My Cut"])
+    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+              'August', 'September', 'October', 'November', 'December']
+    return pd.DataFrame({'Months': months, 'ING': 0, 'CEC': 0, 'Orange': 0, 'Salary': 0, 'MyCut': 0})
 
-    return df
-
-def database_installments():
+def database_connection() -> pymysql.Connection:
     """
-    Returns a Deta base object for the 'installments' collection.
+    Connects to the database and returns a database connection object.
 
-    This function initializes the Deta SDK and creates a new base object for the 'installments' collection.
-    The returned base object can be used to interact with the 'installments' collection.
-
-    Returns:
-        deta.Base: A Deta base object for the 'installments' collection.
+    Raises:
+        pymysql.Error: If there is an error connecting to the database.
     """
-    # Initialize the Deta SDK
-    deta = Deta(DETA_KEY)
+    connection = None
+    try:
+        connection = pymysql.connect(
+            # Database connection parameters
+            host=HOST,
+            user=USER,
+            password=PASSWORD,
+            port=int(PORT),
+            database=DATABASE,
+        )
+        print(f'Connected to database: {connection} ')
+    except pymysql.Error as e:
+        # Print error message if there is an error connecting to the database
+        print(f'Error connecting to database: {e}')
+        # Raise the exception so it can be handled by the caller
+        raise
 
-    # Create a new base object for the 'installments' collection
-    db = deta.Base('installments')
+    return connection
 
-    return db
-
-def load_data():
+def load_data() -> dict:
     """
-    Load data from the 'installments' collection and return it as a dictionary.
+    Loads the data from the database and returns it in a dictionary.
 
-    This function initializes the Deta SDK and retrieves all items from the 'installments' collection.
-    The returned data is a dictionary where the keys are the 'key' field of each item and the values are the 'value' field.
+    The keys of the dictionary are in the format "ING_January_checkbox", and the
+    values are the corresponding values from the database.
 
-    Returns:
-        dict: A dictionary containing the data loaded from the 'installments' collection.
+    Returns
+    -------
+    dict
+        A dictionary with the data from the database.
     """
-    # Initialize the Deta SDK and get the 'installments' collection
-    db = database_installments()
+    connection = database_connection()
+    try:
+        with connection.cursor() as cursor:
+            # Select all data from the ExpenseTrackerInstallments table
+            sql = "SELECT * FROM ExpenseTrackerInstallments"
+            cursor.execute(sql)
+            # Fetch all the results
+            results = cursor.fetchall()
 
-    # Fetch all items from the 'installments' collection
-    data = db.fetch().items
-
-    # Create a dictionary where the keys are the 'key' field of each item and the values are the 'value' field
-    return {item['key']: item['value'] for item in data}
-
-
+            # Initialize an empty dictionary to store the data
+            data = {}
+            # Iterate over the months
+            for row in results:
+                # Get the month from the row
+                month = row[1]
+                # Add the data for each month to the dictionary
+                data[f"ING_{month}_checkbox"] = bool(row[2])
+                data[f"ING_{month}_input"] = float(row[2])
+                data[f"CEC_{month}_checkbox"] = bool(row[3])
+                data[f"CEC_{month}_input"] = float(row[3])
+                data[f"Orange_{month}_checkbox"] = bool(row[4])
+                data[f"Orange_{month}_input"] = float(row[4])
+                data[f"Salary_{month}_input"] = float(row[5])
+            # Return the dictionary
+            return data
+    finally:
+        # Close the connection
+        connection.close()
 
 def save_data(data):
     """
-    Save the given data to the 'installments' collection.
+    Saves the data to the database.
 
-    This function initializes the Deta SDK and iterates over the key-value pairs in the given data.
-    For each key-value pair, it creates a new item with the 'key' and 'value' fields set accordingly.
-    The new item is then inserted into the 'installments' collection using the 'put' method.
+    The data is a dictionary with the keys in the format "ING_January_checkbox", and the
+    values are the corresponding values from the database.
 
-    Args:
-        data (dict): A dictionary containing the data to be saved.
-                     The keys are the 'key' field of each item and the values are the 'value' field.
+    Parameters
+    ----------
+    data : dict
+        The dictionary with the data to be saved.
+
+    Returns
+    -------
+    None
     """
-    # Initialize the Deta SDK and get the 'installments' collection
-    db = database_installments()
+    connection = database_connection()
+    try:
+        with connection.cursor() as cursor:
+            # Iterate over the months
+            for month in ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                          'August', 'September', 'October', 'November', 'December']:
+                # Get the data for the current month
+                ing = data.get(f"ING_{month}_input", 0)
+                cec = data.get(f"CEC_{month}_input", 0)
+                orange = data.get(f"Orange_{month}_input", 0)
+                salary = data.get(f"Salary_{month}_input", 0)
+                my_cut = salary - (ing + cec + orange)
 
-    # Iterate over the key-value pairs in the given data
-    for key, value in data.items():
-        # Create a new item with the 'key' and 'value' fields set accordingly
-        item = {"key": key, "value": value}
+                # Update the data in the database
+                sql = """
+                UPDATE ExpenseTrackerInstallments
+                SET ING = %s, CEC = %s, Orange = %s, Salary = %s, MyCut = %s
+                WHERE Months = %s
+                """
+                cursor.execute(sql, (ing, cec, orange, salary, my_cut, month))
 
-        # Insert the new item into the 'installments' collection
-        db.put(item)
-
-
+                # Check if the row for the current month exists
+                cursor.execute("SELECT * FROM ExpenseTrackerInstallments WHERE Months = %s", month)
+                results = cursor.fetchone()
+                if results is None:
+                    # Insert the data if the row does not exist
+                    sql = """
+                    INSERT INTO ExpenseTrackerInstallments (Months, ING, CEC, Orange, Salary, MyCut)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """
+                    cursor.execute(sql, (month, ing, cec, orange, salary, my_cut))
+        connection.commit()
+    finally:
+        connection.close()
 
 def get_table_download_link(df):
     """
-    Generate a download link for the given DataFrame.
+    Generate a link allowing the user to download the given dataframe as a CSV file.
 
-    Args:
-        df (pandas.DataFrame): The DataFrame to be downloaded.
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The dataframe to export.
 
-    Returns:
-        str: The HTML link for downloading the DataFrame as a CSV file.
+    Returns
+    -------
+    str
+        A link with the download attribute set to "data.csv", which will allow the user
+        to download the dataframe as a CSV file.
     """
-    # Convert the DataFrame to CSV format
+    # Convert the dataframe to a CSV string
     csv = df.to_csv(index=False)
 
-    # Encode the CSV data in base64 format
+    # Encode the string as base64
     b64 = base64.b64encode(csv.encode()).decode()
 
-    # Generate the HTML link for downloading the CSV data
+    # Generate the link
     href = f'<a href="data:file/csv;base64,{b64}" download="data.csv">Download CSV</a>'
 
+    # Return the link
     return href
 
 def f_instalments():
     """
-    This function is a Streamlit app for managing installments.
-    It displays a table with input fields for each month and allows the user to input expenses for each month.
-    The function also calculates the total expenses for each month and provides an option to download the table as a CSV file.
+    Function to display the installments table, allowing the user to input values
+    and download the table as a CSV file.
+
+    The function also displays the total added, current, and remaining balance for
+    each of the two accounts.
     """
     try:
-        # Load the data from the session state
         data = load_data()
-
-        # Create an empty DataFrame with the required columns
         dataframe = table()
 
-        # Display the title for the installments section
         st.markdown("## Installments")
         st.markdown("---")
 
-        # Create a DataFrame with the months
-        months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-                  'August', 'September', 'October', 'November', 'December']
-        months_df = pd.DataFrame(months, columns=['Months'])
-
-        # Concatenate the months DataFrame with the existing DataFrame
-        dataframe = pd.concat([months_df, dataframe], axis=1)
-
-        # Initialize the total expenses for each month
         total_ing = 0.0
         total_cec = 0.0
 
-        # Create columns for the table headers
+        # Display the months and column names
         header_columns = st.columns(len(dataframe.columns))
         st.write("---")
         current_year = datetime.datetime.now().year
@@ -137,27 +190,24 @@ def f_instalments():
         for col_index, col_name in enumerate(dataframe.columns[1:], start=1):
             header_columns[col_index].write(col_name)
 
-        # Iterate over each row in the DataFrame
+        # Iterate over the dataframe rows
         for i, row in dataframe.iterrows():
-            # Create columns for the input fields
             cols = st.columns(len(dataframe.columns))
             month = row['Months']
             cols[0].write(f"{month}")
             st.divider()
 
-            # Initialize the expense values for each month
             ing_value = cec_value = orange_value = salary_value = 0.0
 
-            # Iterate over each column in the DataFrame
+            # Iterate over the columns, displaying a checkbox and a number input
+            # for each column
             for j, col in enumerate(dataframe.columns[1:-1]):
                 col_widget = cols[j + 1]
 
                 with col_widget:
-                    # Create keys for the checkbox and input fields
                     checkbox_key = f"{col}_{month}_checkbox"
                     input_key = f"{col}_{month}_input"
 
-                    # Display the checkbox and input fields
                     checkbox_value = st.checkbox("", key=checkbox_key, value=data.get(checkbox_key, False))
                     if col == "Salary":
                         salary_value = float(data.get(input_key, 0.0))
@@ -165,14 +215,10 @@ def f_instalments():
                     else:
                         input_value = st.number_input("RON", key=input_key, value=float(data.get(input_key, 0.0)), step=0.1)
 
-                    # Update the data dictionary with the new values
                     data[checkbox_key] = checkbox_value
                     data[input_key] = input_value
-
-                    # Update the DataFrame with the new values
                     dataframe.at[i, col] = input_value
 
-                    # Update the expense values based on the column name
                     if col == "ING":
                         ing_value = input_value
                     elif col == "CEC":
@@ -180,70 +226,64 @@ def f_instalments():
                     elif col == "Orange":
                         orange_value = input_value
 
-            # Calculate the total expenses for the month
+            # Calculate the "MyCut" value
             my_cut = salary_value - (ing_value + cec_value + orange_value)
+            dataframe.at[i, "MyCut"] = my_cut
 
-            # Update the DataFrame with the total expenses
-            dataframe.at[i, "My Cut"] = my_cut
-
-            # Display the total expenses
+            # Display the "MyCut" value
             with cols[-1]:
                 st.write("**RON**")
-                st.number_input("", value=my_cut, step=0.1, key=f"My Cut_{month}")
+                st.number_input("", value=my_cut, step=0.1, key=f"MyCut_{month}")
 
-            # Update the total expenses for each month
+            # Sum up the total added values
             total_ing += ing_value
             total_cec += cec_value
 
-        # Display the download button
+        # Add a download button
         if st.button("Download"):
             st.markdown(get_table_download_link(dataframe), unsafe_allow_html=True)
 
-        # Define the maximum funds for each expense category
+        # Calculate the remaining balance for each account
         all_ing = 13529.00
         all_cec = 38660.00
 
-        # Calculate the current funds for each expense category
-        current_ing = 4356.34 + total_ing
-        current_cec = 891.37 + total_cec
+        current_ing = 3699.81 + total_ing
+        current_cec = 594.35 + total_cec
 
-        # Create columns for the current funds display
+        remaining_ing = all_ing - current_ing
+        remaining_cec = all_cec - current_cec
+
+        # Display the current and remaining balance for each account
         col1, col2, col3 = st.columns(3)
 
-        # Display the current funds for each expense category
         with col1:
             st.markdown("## Current")
             st.number_input("ING Current", min_value=0.0, step=0.1, value=current_ing, key="ING - Current")
             st.number_input("CEC Current", min_value=0.0, step=0.1, value=current_cec, key="CEC - Current")
             st.markdown("---")
 
-        # Calculate the remaining funds for each expense category
-        remaining_ing = all_ing - current_ing
-        remaining_cec = all_cec - current_cec
-
-        # Display the remaining funds for each expense category
         with col2:
             st.markdown("## Added")
             st.number_input("ING Added", min_value=0.0, step=0.1, value=total_ing, key="ING - Total Added")
             st.number_input("CEC Added", min_value=0.0, step=0.1, value=total_cec, key="CEC - Total Added")
             st.markdown("---")
 
-        # Display the remaining funds for each expense category
         with col3:
             st.markdown("## Remaining")
             st.number_input("ING Remaining", min_value=0.0, step=0.1, value=remaining_ing, key="ING - Total Remaining")
             st.number_input("CEC Remaining", min_value=0.0, step=0.1, value=remaining_cec, key="CEC - Total Remaining")
             st.markdown("---")
 
-        # Display the maximum funds for each expense category
+        # Display the maximum balance for each account
         st.markdown("## Max Funds")
         st.number_input("ING Funds", min_value=0.0, step=0.1, value=all_ing, key="ING - Total")
         st.number_input("CEC Funds", min_value=0.0, step=0.1, value=all_cec, key="CEC - Total")
         st.markdown("---")
 
-        # Save the data to the session state
+        # Save the data
         save_data(data)
 
+        # Return the dataframe
         return dataframe
 
     except Exception as e:

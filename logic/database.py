@@ -1,58 +1,106 @@
+# database.py
 import os
 from deta import Deta
 from collections import OrderedDict
 from logic.util import *
+import pymysql
+import json
 
 
-
-def database():
+def database() -> pymysql.Connection:
     """
-    Returns a Deta base object for the 'Details' collection.
+    Connects to the database and returns a database connection object.
 
-    This function initializes the Deta SDK and creates a new base object for the 'Details' collection.
-    The returned base object can be used to interact with the 'Details' collection.
-
-    Returns:
-        deta.Base: A Deta base object for the 'Details' collection.
+    Raises:
+        pymysql.Error: If there is an error connecting to the database.
     """
-    # Initialize the Deta SDK
-    deta = Deta(DETA_KEY)
+    connection = None
+    try:
+        connection = pymysql.connect(
+            host=HOST,
+            user=USER,
+            password=PASSWORD,
+            port=int(PORT),
+            database=DATABASE,
+        )
+        print(f'Connected to database: {connection} ')
+        cursor = connection.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS ExpenseTrackerDetails (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                period VARCHAR(255) NOT NULL,
+                incomes JSON NOT NULL,
+                expenses JSON NOT NULL,
+                comment TEXT
+            )
+        ''')
+    except pymysql.Error as e:
+        print(f'Error connecting to database: {e}')
+        raise
 
-    # Create a new base object for the 'Details' collection
-    db = deta.Base('Details')
-
-    return db
+    return connection
 
 def load_all_data():
     """
     Load all data from the database.
 
-    Returns:
-        list: A list of dictionaries containing the data loaded from the database.
+    This function fetches all the entries from the ExpenseTrackerDetails table in the database and
+    returns them as a list of dictionaries.
+
+    The dictionaries contain the following keys:
+        - id (int): The unique identifier for the entry.
+        - period (str): The period for the expenses/incomes (e.g. "January 2022").
+        - incomes (dict): A dictionary of incomes where the keys are the income names and the values are the amounts.
+        - expenses (dict): A dictionary of expenses where the keys are the expense names and the values are the amounts.
+        - comment (str): A comment associated with the period.
+
+    :return: A list of dictionaries containing the data loaded from the database.
     """
-    # Initialize the Deta SDK and get the 'Details' collection
-    db = database()
-
-    # Fetch all items from the 'Details' collection
-    data = db.fetch().items
-
-    # Return the fetched data
+    connection = database()
+    cursor = connection.cursor()
+    # Fetch all the entries from the ExpenseTrackerDetails table
+    query = 'SELECT * FROM ExpenseTrackerDetails'
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    data = []
+    for row in rows:
+        # Create a dictionary for each entry with the relevant keys
+        data.append({
+            'id': row[0],
+            'period': row[1],
+            'incomes': json.loads(row[2]),
+            'expenses': json.loads(row[3]),
+            'comment': row[4]
+        })
+    # Close the connection
+    connection.close()
     return data
 
 def save_all_data(data):
     """
     Save all data to the database.
 
+    This function iterates over the data list and inserts each dictionary into the
+    ExpenseTrackerDetails table in the database.
+
     Args:
         data (list): A list of dictionaries containing the data to be saved.
     """
-    # Initialize the Deta SDK and get the 'Details' collection
-    db = database()
+    connection = database()
+    cursor = connection.cursor()
 
-    # Iterate over each item in the data list
+    # Iterate over each dictionary in the data list
     for item in data:
-        # Put the item in the 'Details' collection
-        db.put(item)
+        # Create a query to insert the data into the database
+        query = 'INSERT INTO ExpenseTrackerDetails (period, incomes, expenses, comment) VALUES (%s, %s, %s, %s)'
+        # Execute the query with the data from the dictionary
+        cursor.execute(query, (item['period'], json.dumps(item['incomes']),
+                               json.dumps(item['expenses']), item['comment']))
+
+    # Commit the changes to the database
+    connection.commit()
+    # Close the database connection
+    connection.close()
 
 def find_period_in_data(period, data):
     """
@@ -65,18 +113,22 @@ def find_period_in_data(period, data):
     Returns:
         dict or None: The entry with the given period, or None if not found.
     """
-    # Iterate over each entry in the data list
+    # Iterate over the data list
     for entry in data:
-        # Check if the period of the entry matches the given period
-        if entry['Period'] == period:
-            # Return the entry if found
+        # Check if the period matches
+        if entry['period'] == period:
+            # Return the matching entry
             return entry
-    # Return None if the entry is not found
+
+    # Return None if no matching entry was found
     return None
 
 def insert_period(period, incomes, expenses, comment):
     """
     Insert a new period into the database, or update an existing one.
+
+    If an existing entry is found, the incomes, expenses, and comment fields will be updated.
+    If no existing entry is found, a new entry will be inserted.
 
     Args:
         period (str): The period to insert or update.
@@ -84,33 +136,28 @@ def insert_period(period, incomes, expenses, comment):
         expenses (dict): A dictionary of expenses for the period.
         comment (str): A comment associated with the period.
     """
-    db = database()
-    existing_entry = db.get(period)
+    connection = database()
+    cursor = connection.cursor()
 
-    # If the period already exists, update it
+    # Check if an existing entry exists
+    query = 'SELECT * FROM ExpenseTrackerDetails WHERE period = %s'
+    cursor.execute(query, (period,))
+    existing_entry = cursor.fetchone()
+
     if existing_entry:
-        # Update the incomes and expenses dictionaries
-        existing_incomes = existing_entry['Incomes']
-        existing_expenses = existing_entry['Expenses']
-        for key, value in incomes.items():
-            existing_incomes[key] = existing_incomes.get(key, 0) + value
-        for key, value in expenses.items():
-            existing_expenses[key] = existing_expenses.get(key, 0) + value
-
-        # Update the comment
-        existing_entry['Comment'] = comment
-        db.put(existing_entry)
-
-    # If the period doesn't exist, create a new entry
+        # Update the existing entry
+        query = 'UPDATE ExpenseTrackerDetails SET incomes = %s, expenses = %s, comment = %s WHERE period = %s'
+        cursor.execute(query, (json.dumps(incomes), json.dumps(expenses), comment, period))
     else:
-        new_entry = {
-            'key': period,
-            'Period': period,
-            'Incomes': incomes,
-            'Expenses': expenses,
-            'Comment': comment
-        }
-        db.put(new_entry)
+        # Insert a new entry
+        query = 'INSERT INTO ExpenseTrackerDetails (period, incomes, expenses, comment) VALUES (%s, %s, %s, %s)'
+        cursor.execute(query, (period, json.dumps(incomes), json.dumps(expenses), comment))
+
+    # Commit the changes to the database
+    connection.commit()
+
+    # Close the database connection
+    connection.close()
 
 def update_period(period, incomes, expenses):
     """
@@ -121,23 +168,19 @@ def update_period(period, incomes, expenses):
         incomes (dict): A dictionary of updated incomes for the period.
         expenses (dict): A dictionary of updated expenses for the period.
     """
-    db = database()
-    existing_entry = db.get(period)
-    if existing_entry:
-        # Update the incomes and expenses dictionaries
-        existing_entry['Incomes'] = incomes
-        existing_entry['Expenses'] = expenses
-        db.put(existing_entry)
-    else:
-        # If the period doesn't exist, create a new entry
-        new_entry = {
-            'key': period,
-            'Period': period,
-            'Incomes': incomes,
-            'Expenses': expenses,
-            'Comment': ''
-        }
-        db.put(new_entry)
+    # Connect to the database
+    connection = database()
+    cursor = connection.cursor()
+
+    # Update the period in the database
+    query = 'UPDATE ExpenseTrackerDetails SET incomes = %s, expenses = %s WHERE period = %s'
+    cursor.execute(query, (json.dumps(incomes), json.dumps(expenses), period))
+
+    # Commit the changes to the database
+    connection.commit()
+
+    # Close the database connection
+    connection.close()
 
 def get_all_periods():
     """
@@ -146,14 +189,22 @@ def get_all_periods():
     Returns:
         list: A list of all the periods.
     """
-    # Initialize the Deta SDK and get the 'Details' collection
-    db = database()
+    # Connect to the database
+    connection = database()
+    cursor = connection.cursor()
 
-    # Fetch all the entries from the 'Details' collection
-    data = db.fetch().items
+    # Execute the query to get all periods
+    query = 'SELECT period FROM ExpenseTrackerDetails'
+    cursor.execute(query)
 
-    # Extract the periods from the entries
-    periods = [entry['Period'] for entry in data]
+    # Fetch all the periods
+    rows = cursor.fetchall()
+
+    # Extract the periods from the query results
+    periods = [row[0] for row in rows]
+
+    # Close the database connection
+    connection.close()
 
     # Return the list of periods
     return periods
@@ -173,45 +224,46 @@ def get_period(period):
             - comment (str): A comment associated with the period.
                 If no comment is found, an empty string is returned.
     """
-    # Initialize the Deta SDK and get the 'Details' collection
-    db = database()
-
-    # Convert the period to a string
-    period_str = str(period)
-
-    # Retrieve the entry for the given period from the database
-    entry = db.get(period_str)
-
-    # If the entry exists, extract the details
+    # Connect to the database
+    connection = database()
+    # Create a cursor object to execute queries
+    cursor = connection.cursor()
+    # Execute the query to get the period details
+    query = 'SELECT * FROM ExpenseTrackerDetails WHERE period = %s'
+    cursor.execute(query, (period,))
+    # Fetch the query result
+    entry = cursor.fetchone()
+    # Close the database connection
+    connection.close()
+    # If a result was found, return a dictionary with the details
     if entry:
         return {
-            "incomes": entry['Incomes'],
-            "expenses": entry['Expenses'],
-            "comment": entry['Comment'] if 'Comment' in entry else ""
+            "incomes": json.loads(entry[2]),
+            "expenses": json.loads(entry[3]),
+            "comment": entry[4] if entry[4] else ""
         }
-
-    # If the entry doesn't exist, return an empty dictionary with the correct keys
+    # If no result was found, return an empty dictionary
     return {"incomes": {}, "expenses": {}, "comment": ""}
 
 def clear_data():
     """
     Clear all data from the database.
 
-    This function initializes the Deta SDK and fetches all entries from the 'Details' collection.
-    It then deletes each entry from the database.
+    This function truncates the ExpenseTrackerDetails table, which will delete all rows.
     """
-    # Initialize the Deta SDK and get the 'Details' collection
-    db = database()
+    # Connect to the database
+    connection = database()
+    # Create a cursor object to execute queries
+    cursor = connection.cursor()
+    # Execute the query to truncate the table
+    query = 'TRUNCATE TABLE ExpenseTrackerDetails'
+    cursor.execute(query)
+    # Commit the changes to the database
+    connection.commit()
+    # Close the database connection
+    connection.close()
 
-    # Fetch all entries from the 'Details' collection
-    items = db.fetch().items
-
-    # Iterate over each entry and delete it from the database
-    for item in items:
-        # Delete the entry from the 'Details' collection
-        db.delete(item['key'])
-
-def update_comment(period, edited_comment):
+def update_comment(period: str, edited_comment: str) -> None:
     """
     Update the comment associated with a given period.
 
@@ -219,14 +271,18 @@ def update_comment(period, edited_comment):
         period (str): The period to update the comment for.
         edited_comment (str): The new comment to associate with the period.
     """
-    # Initialize the Deta SDK and get the 'Details' collection
-    db = database()
 
-    # Retrieve the entry for the given period from the database
-    existing_entry = db.get(period)
+    # Connect to the database
+    connection = database()
+    # Create a cursor object to execute queries
+    cursor = connection.cursor()
 
-    # If the entry exists, update the comment and save the entry
-    if existing_entry:
-        existing_entry['Comment'] = edited_comment
-        db.put(existing_entry)
+    # Execute the query to update the comment
+    query = 'UPDATE ExpenseTrackerDetails SET comment = %s WHERE period = %s'
+    cursor.execute(query, (edited_comment, period))
 
+    # Commit the changes to the database
+    connection.commit()
+
+    # Close the database connection
+    connection.close()

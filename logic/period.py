@@ -5,8 +5,15 @@ from datetime import datetime
 import streamlit as st
 from logic.currency import *
 
-def per():
+def per() -> tuple[str, int]:
+    """
+    Generate a Streamlit interface for selecting a month and year for data entry.
 
+    Returns
+    -------
+    tuple[str, int]
+        A tuple containing the selected month and year.
+    """
     # Get the current currency.
     currency = curr()
 
@@ -19,6 +26,7 @@ def per():
     # Display the header for data entry and dropdowns for selecting the month and year.
     st.header(f"Data Entry in: {currency}")
     col1, col2 = st.columns(2)
+    # Display the selectbox for selecting the month and year.
     month = col1.selectbox("Select Month", months, index=current_month_index)
     year = col2.selectbox("Select Year", years)
 

@@ -5,15 +5,35 @@ from logic.currency import *
 import plotly.graph_objects as go
 from logic.database import *
 
-def show_details(total_income, currency, total_expense, remaining_budget):
+def show_details(total_income: float, currency: str, total_expense: float, remaining_budget: float):
+    """
+    Displays the calculated income, expense, and remaining balance in the Streamlit app.
 
+    Args:
+        total_income (float): The total income.
+        currency (str): The currency symbol.
+        total_expense (float): The total expense.
+        remaining_budget (float): The remaining balance.
+    """
     # Display the calculated metrics in the Streamlit app.
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total Income", f"{total_income} {currency}")
-    col2.metric("Total Expense", f"{total_expense} {currency}")
-    col3.metric("Remaining Balance", f"{remaining_budget} {currency}")
+    col1.metric("Total Income", f"{total_income} {currency}",
+                help="The total income.")
+    col2.metric("Total Expense", f"{total_expense} {currency}",
+                help="The total expense.")
+    col3.metric("Remaining Balance", f"{remaining_budget} {currency}",
+                help="The remaining balance.")
 
 def plug():
+    """
+    The main function to display the data visualization section.
+
+    This function is called from the Streamlit app and displays the data visualization section.
+
+    It fetches the data for the selected period from the database and displays the calculated metrics, including the total income, total expense, and remaining balance.
+
+    It also displays a Sankey diagram to visualize the income and expense data.
+    """
     # Get the current currency for display purposes.
     currency = curr()
 

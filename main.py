@@ -6,6 +6,11 @@ from logic.app import *
 from logic.authenticator import *
 
 def main():
+    """
+    The main entry point for the expense tracker app.
+
+    Handles the user's choice between the login, register, and app sections.
+    """
     # Configure the page with title and icon
     settings()
 
@@ -17,11 +22,17 @@ def main():
     if st.session_state['mode'] == 'login':
         with st.form('login_form'):
             st.subheader(':green[Login]')
+
+            # Get the username and password from the user
             username = st.text_input(':blue[Username]')
             password = st.text_input(':blue[Password]', type='password')
+
+            # Add buttons for the login form
             b1, b2, b3, b4, b5 = st.columns(5)
             with b2:
                 submitted = st.form_submit_button('Login')
+
+            # If the form is submitted, check the login credentials
             if submitted:
                 if validate_username(username):
                     if username in get_usernames():
@@ -36,6 +47,7 @@ def main():
                 else:
                     st.error('Invalid username format.')  # Username format is wrong
 
+            # Add a button to switch to the register form
             with b4:
                 registering = st.form_submit_button('Register')
                 if registering:
