@@ -22,9 +22,64 @@ def og_app():
     Handles the user's choice between the Data Entry, Data Visualization, and Data Tracker sections.
     """
     # Check the current month and display snow effect if it's Nov, Dec, or Jan
-    current_month = datetime.datetime.now().month
-    if current_month in [11, 12, 1]:
-        st.snow()
+    if 'snow_initialized' not in st.session_state:
+        current_month = datetime.datetime.now().month
+        if current_month in [11, 12, 1, 2]:
+            # Generate 50 unique snowflake animations
+            snowflake_animations = [
+                f"""
+                @keyframes fall-{i} {{
+                    from {{
+                        transform: translate({(i % 5) * 20 - 50}vw, -10px) rotate(0deg);
+                    }}
+                    to {{
+                        transform: translate({((i % 7) - 3) * 15}vw, 110vh) rotate({i * 360}deg);
+                    }}
+                }}""" for i in range(50)
+            ]
+
+            custom_css = f"""
+                <style>
+                    {' '.join(snowflake_animations)}
+
+                    {''.join([f'''
+                    .snowflake:nth-child({i}) {{
+                        opacity: {0.4 + (i % 6) * 0.1};
+                        width: {1 + (i % 4)}px;
+                        height: {1 + (i % 4)}px;
+                        left: {(i * 2) % 100}vw;
+                        animation: fall-{i % 50} {5 + (i % 7)}s linear infinite;
+                        animation-delay: -{i * 0.2}s;
+                        pointer-events: none;
+                    }}''' for i in range(150)])}
+
+                    .snowflake {{
+                        position: fixed;
+                        background: white;
+                        border-radius: 50%;
+                        pointer-events: none;
+                    }}
+
+                    .snowfall {{
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100vw;
+                        height: 100vh;
+                        z-index: 9999;
+                        pointer-events: none;
+                    }}
+                </style>
+                <div class="snowfall">
+                    {''.join(['<div class="snowflake"></div>' for _ in range(150)])}
+                </div>
+            """
+            st.session_state.snow_css = custom_css
+            st.session_state.snow_initialized = True
+
+    # Render the snow if it's initialized
+    if 'snow_css' in st.session_state:
+        st.markdown(st.session_state.snow_css, unsafe_allow_html=True)
 
     # Use nav to determine user's choice
     selected_choice = nav()
